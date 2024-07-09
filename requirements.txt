@@ -1,0 +1,6 @@
+pandas
+openpyxl
+tkinter
+numpy
+openpyxl
+datetime
