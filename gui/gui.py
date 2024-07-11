@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk, messagebox
 from db.db_processing import InspectionsTable, fixedInfoTable, process_excel
 from functions.data_processing import pullInsPoints, combineData
 from functions.filter_data_error import filter_data_error
@@ -11,10 +11,14 @@ def run_app():
     displayed_dataframe = None  # To keep track of the currently displayed dataframe
 
     def upload_file():
-        file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
-        if file_path:
-            file_label.config(text=file_path)
-            return file_path
+        try:
+            file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
+            if file_path:
+                file_label.config(text=file_path)
+                return file_path
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to upload file: {str(e)}")
+
 
     def add_criteria():
         criteria_frame = ttk.Frame(criteria_container)
@@ -40,34 +44,49 @@ def run_app():
     def process_criteria():
         nonlocal qc_result, filtered_result, toggle_button, displayed_dataframe
 
-        db_file_path = 'TML_APM.xlsx'
-        df = process_excel(db_file_path, "Table1")
-        fixed = fixedInfoTable(df)
-        inspections = InspectionsTable(df)
+        try:
+            db_file_path = 'TML_APM.xlsx'
+            df = process_excel(db_file_path, "Table1")
+            fixed = fixedInfoTable(df)
+            inspections = InspectionsTable(df)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to process database file: {str(e)}")
+            return
         
         criteria_list.clear()
         for widgets in criteria_widgets_list:
-            criteria, operator, value, value_type = widgets
-            criteria_list.append({
-                'criteria': criteria.get(),
-                'operator': operator.get(),
-                'value': value.get(),
-                'value_type': value_type.get()
-            })
+            try:
+                criteria, operator, value, value_type = widgets
+                criteria_list.append({
+                    'criteria': criteria.get(),
+                    'operator': operator.get(),
+                    'value': value.get(),
+                    'value_type': value_type.get()
+                })
+            except Exception as e:
+                messagebox.showerror("Error", f"Invalid criteria input: {str(e)}")
+                return
+            
         file_path = file_label.cget("text")
         sheet_name = sheetname_entry.get()
         input_unit = unit_combobox.get()
         output_unit = output_unit_combobox.get()
         
-        complete_table = combineData(file_path, sheet_name, input_unit, output_unit, fixed, inspections)
-        qc_result = QC_data(criteria_list, complete_table)
-        filtered_result = filter_data_error(qc_result)
-        displayed_dataframe = qc_result  # Set the displayed dataframe to qc_result by default
-        display_result(displayed_dataframe)  # Default display
+        try:
+            complete_table = combineData(file_path, sheet_name, input_unit, output_unit, fixed, inspections)
+            qc_result = QC_data(criteria_list, complete_table)
+            filtered_result = filter_data_error(qc_result)
+            displayed_dataframe = qc_result  # Set the displayed dataframe to qc_result by default
+            display_result(displayed_dataframe)  # Default display
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to process QC data: {str(e)}")
+            return
 
         if toggle_button is None:
             toggle_button = tk.Button(root, text="Show Filtered Results", command=toggle_display)
             toggle_button.pack(pady=10)
+
+        save_as_button.pack(pady=10)  # Show the Save As button after QC processing
 
     def display_result(dataframe):
         nonlocal displayed_dataframe
@@ -106,16 +125,19 @@ def run_app():
 
     def save_as():
         if displayed_dataframe is not None:
-            save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
-            if save_path:
-                displayed_dataframe.to_excel(save_path, index=False)
+            try:
+                save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+                if save_path:
+                    displayed_dataframe.to_excel(save_path, index=False)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save file: {str(e)}")
 
     root = tk.Tk()
     root.title("QC Data Processing Application")
 
     file_label = tk.Label(root, text="No file selected")
     file_label.pack()
-    upload_button = tk.Button(root, text="Upload Excel File", command=upload_file)
+    upload_button = tk.Button(root, text="Upload APM Upload Sheet", command=upload_file)
     upload_button.pack(pady=5)
 
     sheetname_label = tk.Label(root, text="Sheet Name:")
@@ -144,14 +166,15 @@ def run_app():
     finalize_button = tk.Button(root, text="Finalize Criteria and Run QC", command=process_criteria)
     finalize_button.pack(pady=10)
 
-    save_as_button = tk.Button(root, text="Save As", command=save_as)
-    save_as_button.pack(pady=10)
+    save_as_button = tk.Button(root, text="Save As Excel", command=save_as)
+    # Initially do not pack the save_as_button
+    # save_as_button.pack(pady=10)  # Will pack it later in process_criteria
 
     criteria_options = [
         'nominal thickness difference (Tn - Ta)', 
         'critical thickness difference (Ta - Tr)', 
         'last reading difference (Tprev - Ta)', 
-        'last reading difference (Ta - Tprev)', 
+        # 'last reading difference (Ta - Tprev)', 
         'Remaining Life', 
         'Corrosion rate (ST)', 
         'Corrosion rate (LT)'
