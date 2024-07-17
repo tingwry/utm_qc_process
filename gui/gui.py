@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
-from db.db_processing import InspectionsTable, fixedInfoTable, process_excel, process_fixed_excel, process_inspections_excel
+from db.db_processing import InspectionsTable, fixedInfoTable, process_excel
 from functions.data_processing import pullInsPoints, combineData
 from functions.filter_data_error import filter_data_error
 from functions.qc_processing import QC_data
@@ -9,15 +9,28 @@ import pandas as pd
 def run_app():
     toggle_button = None
     displayed_dataframe = None  # To keep track of the currently displayed dataframe
+    db_file_path = None
+    apm_file_path = None
 
-    def upload_file():
+    def upload_file(label):
         try:
             file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
             if file_path:
-                file_label.config(text=file_path)
+                label.config(text=file_path)
                 return file_path
         except Exception as e:
             messagebox.showerror("Error", f"Failed to upload file: {str(e)}")
+            return None
+
+    def upload_db_file():
+        nonlocal db_file_path
+        db_file_path = upload_file(db_file_label)
+        return db_file_path
+
+    def upload_apm_file():
+        nonlocal apm_file_path
+        apm_file_path = upload_file(file_label)
+        return apm_file_path
 
 
     def add_criteria():
@@ -55,6 +68,19 @@ def run_app():
     def process_criteria():
         nonlocal qc_result, filtered_result, toggle_button, displayed_dataframe
 
+        if not db_file_path:
+            messagebox.showerror("Error", "Database file not selected.")
+            return
+        
+        if not apm_file_path:
+            messagebox.showerror("Error", "APM Upload Sheet file not selected.")
+            return
+
+        sheet_name = sheetname_entry.get().strip()
+        if not sheet_name:
+            messagebox.showerror("Error", "Sheet name cannot be blank.")
+            return
+
         criteria_list.clear()
         for widgets in criteria_widgets_list:
             try:
@@ -73,7 +99,6 @@ def run_app():
                 return
 
         try:
-            db_file_path = 'TML_APM.xlsx'
             df = process_excel(db_file_path, "Table1")
             fixed = fixedInfoTable(df)
             inspections = InspectionsTable(df)
@@ -82,13 +107,12 @@ def run_app():
             return
         
             
-        file_path = file_label.cget("text")
         sheet_name = sheetname_entry.get()
         input_unit = unit_combobox.get()
         output_unit = output_unit_combobox.get()
         
         try:
-            complete_table = combineData(file_path, sheet_name, input_unit, output_unit, fixed, inspections)
+            complete_table = combineData(apm_file_path, sheet_name, input_unit, output_unit, fixed, inspections)
             qc_result = QC_data(criteria_list, complete_table)
             filtered_result = filter_data_error(qc_result)
             displayed_dataframe = qc_result  # Set the displayed dataframe to qc_result by default
@@ -148,11 +172,18 @@ def run_app():
                 messagebox.showerror("Error", f"Failed to save file: {str(e)}")
 
     root = tk.Tk()
-    root.title("QC Data Processing Application")
+    root.title("UTM QC Process Application")
 
+    # Database file upload section
+    db_file_label = tk.Label(root, text="No database file selected")
+    db_file_label.pack()
+    upload_db_button = tk.Button(root, text="Upload Database File", command=upload_db_file)
+    upload_db_button.pack(pady=5)
+
+    # APM upload sheet file upload section
     file_label = tk.Label(root, text="No file selected")
     file_label.pack()
-    upload_button = tk.Button(root, text="Upload APM Upload Sheet", command=upload_file)
+    upload_button = tk.Button(root, text="Upload APM Upload Sheet", command=upload_apm_file)
     upload_button.pack(pady=5)
 
     sheetname_label = tk.Label(root, text="Sheet Name:")
