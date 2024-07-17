@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
-from db.db_processing import InspectionsTable, fixedInfoTable, process_excel
+from db.db_processing import InspectionsTable, fixedInfoTable, process_excel, process_fixed_excel, process_inspections_excel
 from functions.data_processing import pullInsPoints, combineData
 from functions.filter_data_error import filter_data_error
 from functions.qc_processing import QC_data
@@ -24,7 +24,7 @@ def run_app():
         criteria_frame = ttk.Frame(criteria_container)
         criteria_frame.pack(fill='x', pady=5)
         
-        criteria_dropdown = ttk.Combobox(criteria_frame, values=criteria_options)
+        criteria_dropdown = ttk.Combobox(criteria_frame, values=criteria_options, width=35)
         criteria_dropdown.set(criteria_options[0])
         criteria_dropdown.pack(side='left', padx=5)
         
@@ -41,8 +41,36 @@ def run_app():
         
         criteria_widgets_list.append((criteria_dropdown, operator_dropdown, value_input, value_type_dropdown))
 
+        def update_value_type(event):
+                selected_criteria = criteria_dropdown.get()
+                if selected_criteria in ['Remaining Life', 'Corrosion rate (ST)', 'Corrosion rate (LT)']:
+                    value_type_dropdown.set('number')
+                    value_type_dropdown.config(state='disabled')
+                else:
+                    value_type_dropdown.config(state='normal')
+
+        criteria_dropdown.bind("<<ComboboxSelected>>", update_value_type)
+
+
     def process_criteria():
         nonlocal qc_result, filtered_result, toggle_button, displayed_dataframe
+
+        criteria_list.clear()
+        for widgets in criteria_widgets_list:
+            try:
+                criteria, operator, value, value_type = widgets
+                if not value.get().strip():
+                    messagebox.showerror("Error", "All value inputs must be filled.")
+                    return
+                criteria_list.append({
+                    'criteria': criteria.get(),
+                    'operator': operator.get(),
+                    'value': value.get(),
+                    'value_type': value_type.get()
+                })
+            except Exception as e:
+                messagebox.showerror("Error", f"Invalid criteria input: {str(e)}")
+                return
 
         try:
             db_file_path = 'TML_APM.xlsx'
@@ -53,19 +81,6 @@ def run_app():
             messagebox.showerror("Error", f"Failed to process database file: {str(e)}")
             return
         
-        criteria_list.clear()
-        for widgets in criteria_widgets_list:
-            try:
-                criteria, operator, value, value_type = widgets
-                criteria_list.append({
-                    'criteria': criteria.get(),
-                    'operator': operator.get(),
-                    'value': value.get(),
-                    'value_type': value_type.get()
-                })
-            except Exception as e:
-                messagebox.showerror("Error", f"Invalid criteria input: {str(e)}")
-                return
             
         file_path = file_label.cget("text")
         sheet_name = sheetname_entry.get()
@@ -174,7 +189,6 @@ def run_app():
         'nominal thickness difference (Tn - Ta)', 
         'critical thickness difference (Ta - Tr)', 
         'last reading difference (Tprev - Ta)', 
-        # 'last reading difference (Ta - Tprev)', 
         'Remaining Life', 
         'Corrosion rate (ST)', 
         'Corrosion rate (LT)'

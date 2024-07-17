@@ -1,5 +1,7 @@
-def remainingLife(criteria, operator, value, result_df):
+def remainingLife(criteria, operator, value, value_type, result_df):
     try:
+        if value_type == '%':
+            raise ValueError(f"Unsupported value type: {value_type}")
         rml = result_df['Remaining Life']
         column_name = criteria + ' ' + operator + ' ' + str(value)
         value = float(value)

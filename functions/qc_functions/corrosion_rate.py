@@ -1,12 +1,13 @@
 def corrosionRateST(criteria, operator, value, value_type, result_df):
     try:
+        if value_type == '%':
+            raise ValueError(f"Unsupported value type: {value_type}")
+        
         cr_st = result_df['Corrosion Rate (ST)']
         value = float(value)
 
-        if value_type == '%':
-            column_name = criteria + ' ' + operator + ' ' + str(value) + '%'
-        else:
-            column_name = criteria + ' ' + operator + ' ' + str(value)
+
+        column_name = criteria + ' ' + operator + ' ' + str(value)
 
         if operator == 'equals':
             result_df[column_name] = (cr_st == value)
@@ -37,13 +38,13 @@ def corrosionRateST(criteria, operator, value, value_type, result_df):
 
 def corrosionRateLT(criteria, operator, value, value_type, result_df):
     try:
+        if value_type == '%':
+            raise ValueError(f"Unsupported value type: {value_type}")
+        
         cr_lt = result_df['Corrosion Rate (LT)']
         value = float(value)
 
-        if value_type == '%':
-            column_name = criteria + ' ' + operator + ' ' + str(value) + '%'
-        else:
-            column_name = criteria + ' ' + operator + ' ' + str(value)
+        column_name = criteria + ' ' + operator + ' ' + str(value)
 
         if operator == 'equals':
             result_df[column_name] = (cr_lt == value)

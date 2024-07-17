@@ -15,10 +15,8 @@ def QC_data(criteria_list, completeTable):
                 result_df = TrDiff(i['criteria'], i['operator'], i['value'], i['value_type'], result_df)
             elif i['criteria'] == 'last reading difference (Tprev - Ta)':
                 result_df = TprevDiffDecrease(i['criteria'], i['operator'], i['value'], i['value_type'], result_df)
-            # elif i['criteria'] == 'last reading difference (Ta - Tprev)':
-            #   result_df = TprevDiffIncrease(i['criteria'], i['operator'], i['value'], i['value_type'], result_df)
             elif i['criteria'] == 'Remaining Life':
-                result_df = remainingLife(i['criteria'], i['operator'], i['value'], result_df)
+                result_df = remainingLife(i['criteria'], i['operator'], i['value'], i['value_type'], result_df)
             elif i['criteria'] == 'Corrosion rate (ST)':
                 result_df = corrosionRateST(i['criteria'], i['operator'], i['value'], i['value_type'], result_df)
             elif i['criteria'] == 'Corrosion rate (LT)':
