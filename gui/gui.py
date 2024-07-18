@@ -5,12 +5,15 @@ from functions.data_processing import pullInsPoints, combineData
 from functions.filter_data_error import filter_data_error
 from functions.qc_processing import QC_data
 import pandas as pd
+import json
+import os
 
 def run_app():
     toggle_button = None
     displayed_dataframe = None  # To keep track of the currently displayed dataframe
     db_file_path = None
     apm_file_path = None
+    default_criteria_file = "default_criteria.json"
 
     def upload_file(label):
         try:
@@ -32,24 +35,24 @@ def run_app():
         apm_file_path = upload_file(file_label)
         return apm_file_path
 
-
-    def add_criteria():
+    def add_criteria(criteria=None):
         criteria_frame = ttk.Frame(criteria_container)
         criteria_frame.pack(fill='x', pady=5)
         
         criteria_dropdown = ttk.Combobox(criteria_frame, values=criteria_options, width=35)
-        criteria_dropdown.set(criteria_options[0])
+        criteria_dropdown.set(criteria.get('criteria') if criteria else criteria_options[0])
         criteria_dropdown.pack(side='left', padx=5)
         
         operator_dropdown = ttk.Combobox(criteria_frame, values=operator_options)
-        operator_dropdown.set(operator_options[0])
+        operator_dropdown.set(criteria.get('operator') if criteria else operator_options[0])
         operator_dropdown.pack(side='left', padx=5)
         
         value_input = ttk.Entry(criteria_frame)
+        value_input.insert(0, criteria.get('value') if criteria else "")
         value_input.pack(side='left', padx=5)
         
         value_type_dropdown = ttk.Combobox(criteria_frame, values=value_type_options)
-        value_type_dropdown.set(value_type_options[0])
+        value_type_dropdown.set(criteria.get('value_type') if criteria else value_type_options[0])
         value_type_dropdown.pack(side='left', padx=5)
         
         criteria_widgets_list.append((criteria_dropdown, operator_dropdown, value_input, value_type_dropdown))
@@ -64,6 +67,34 @@ def run_app():
 
         criteria_dropdown.bind("<<ComboboxSelected>>", update_value_type)
 
+    def set_default_criteria():
+        criteria_list.clear()
+        for widgets in criteria_widgets_list:
+            criteria, operator, value, value_type = widgets
+            criteria_list.append({
+                'criteria': criteria.get(),
+                'operator': operator.get(),
+                'value': value.get(),
+                'value_type': value_type.get()
+            })
+        try:
+            with open(default_criteria_file, 'w') as file:
+                json.dump(criteria_list, file)
+            messagebox.showinfo("Success", "Default criteria set successfully.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to set default criteria: {str(e)}")
+
+    def load_default_criteria():
+        if os.path.exists(default_criteria_file):
+            try:
+                with open(default_criteria_file, 'r') as file:
+                    default_criteria = json.load(file)
+                for criteria in default_criteria:
+                    add_criteria(criteria)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load default criteria: {str(e)}")
+        else:
+            add_criteria()
 
     def process_criteria():
         nonlocal qc_result, filtered_result, toggle_button, displayed_dataframe
@@ -106,8 +137,6 @@ def run_app():
             messagebox.showerror("Error", f"Failed to process database file: {str(e)}")
             return
         
-            
-        sheet_name = sheetname_entry.get()
         input_unit = unit_combobox.get()
         output_unit = output_unit_combobox.get()
         
@@ -203,6 +232,9 @@ def run_app():
     add_criteria_button = tk.Button(root, text="Add Criteria", command=add_criteria)
     add_criteria_button.pack(pady=5)
 
+    set_default_button = tk.Button(root, text="Set Default Criteria", command=set_default_criteria)
+    set_default_button.pack(pady=5)
+
     output_unit_label = tk.Label(root, text="Output Unit (in or mm):")
     output_unit_label.pack()
     output_unit_combobox = ttk.Combobox(root, values=["in", "mm"])
@@ -216,22 +248,22 @@ def run_app():
     # Initially do not pack the save_as_button
     # save_as_button.pack(pady=10)  # Will pack it later in process_criteria
 
-    criteria_options = [
-        'nominal thickness difference (Tn - Ta)', 
-        'critical thickness difference (Ta - Tr)', 
-        'last reading difference (Tprev - Ta)', 
-        'Remaining Life', 
-        'Corrosion rate (ST)', 
+    criteria_options = [    
+        'nominal thickness difference (Tn - Ta)',     
+        'critical thickness difference (Ta - Tr)',     
+        'last reading difference (Tprev - Ta)',     
+        'Remaining Life',     
+        'Corrosion rate (ST)',     
         'Corrosion rate (LT)'
-    ]
-    operator_options = [
-        'equals', 
-        'does not equal', 
-        'is greater than', 
-        'is greater than or equal to', 
-        'is less than', 
+        ]
+    operator_options = [    
+        'equals',     
+        'does not equal',     
+        'is greater than',     
+        'is greater than or equal to',     
+        'is less than',     
         'is less than or equal to'
-    ]
+        ]
     value_type_options = ['%', 'number']
 
     criteria_list = []
@@ -244,6 +276,8 @@ def run_app():
     qc_result = pd.DataFrame()
     filtered_result = pd.DataFrame()
 
+    # Load default criteria if exists
+    load_default_criteria()
+
     root.mainloop()
 
-run_app()

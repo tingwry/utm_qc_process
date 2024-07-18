@@ -30,7 +30,7 @@ def process_excel(db_file_path, sheetname):
         "D",
         "E",
         "F",
-        "G",
+        "TML Group ID",
         "H",
         "TML ID",
         "Nominal Thickness",
@@ -72,6 +72,7 @@ def fixedInfoTable(processed_df):
     df = df[
         [
             "Equipment ID",
+            "TML Group ID",
             "TML ID",
             "Nominal Thickness",
             "Minimum Thickness"
@@ -86,6 +87,7 @@ def InspectionsTable(processed_df):
     df = df[
         [
             "Equipment ID",
+            "TML Group ID",
             "TML ID",
             "Readings",
             "Measurement Taken Date"

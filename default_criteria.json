@@ -1,0 +1,1 @@
+[{"criteria": "nominal thickness difference (Tn - Ta)", "operator": "equals", "value": "5", "value_type": "%"}, {"criteria": "Remaining Life", "operator": "is less than or equal to", "value": "100", "value_type": "number"}]

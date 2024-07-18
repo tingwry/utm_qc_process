@@ -12,7 +12,7 @@ def pullInsPoints(fileName, sheetname, input_unit, output_unit):
         "Equipment ID",
         "B",
         "C",
-        "D",
+        "TML Group ID",
         "TML ID",
         "Readings",
         "Measurement Date",
@@ -24,6 +24,7 @@ def pullInsPoints(fileName, sheetname, input_unit, output_unit):
     df = df[
         [
             "Equipment ID",
+            "TML Group ID",
             "TML ID",
             "Readings",
             "Measurement Date"
@@ -53,7 +54,7 @@ def pullInsPoints(fileName, sheetname, input_unit, output_unit):
     df["Measurement Date"] = pd.to_datetime(df["Measurement Date"], errors='coerce')
 
     # Drop rows with NaN values
-    df.dropna(subset=["Equipment ID", "TML ID", "Readings", "Measurement Date"], inplace=True)
+    df.dropna(subset=["Equipment ID","TML Group ID", "TML ID", "Readings", "Measurement Date"], inplace=True)
 
     # Remove duplicate rows
     df.drop_duplicates(inplace=True)
@@ -68,30 +69,30 @@ def combineData(fileName, sheetname, input_unit, output_unit, fixed, inspections
     points_df = pullInsPoints(fileName, sheetname, input_unit, output_unit)
 
     # Merge fixed information
-    combined_df = points_df.merge(fixed, on=["Equipment ID", "TML ID"], how="left")
+    combined_df = points_df.merge(fixed, on=["Equipment ID","TML Group ID", "TML ID"], how="left")
 
     # Sort the inspections DataFrame by date
     inspections_df = inspections.sort_values(by="Measurement Taken Date", ascending=False)
 
     # Get the previous reading
-    previous_reading = inspections_df.groupby(["Equipment ID", "TML ID"]).head(1)
+    previous_reading = inspections_df.groupby(["Equipment ID","TML Group ID", "TML ID"]).head(1)
     previous_reading = previous_reading.rename(columns={
         "Readings": "Previous Reading",
         "Measurement Taken Date": "Previous Reading Date"
         })
 
     # Get the initial reading
-    initial_reading = inspections_df.groupby(["Equipment ID", "TML ID"]).tail(1)
+    initial_reading = inspections_df.groupby(["Equipment ID","TML Group ID", "TML ID"]).tail(1)
     initial_reading = initial_reading.rename(columns={
         "Readings": "Initial Reading",
         "Measurement Taken Date": "Initial Reading Date"
         })
 
     # Merge the previous reading with the combined_df
-    combined_df = combined_df.merge(previous_reading[["Equipment ID", "TML ID", "Previous Reading", "Previous Reading Date"]], on=["Equipment ID", "TML ID"], how="left")
+    combined_df = combined_df.merge(previous_reading[["Equipment ID","TML Group ID", "TML ID", "Previous Reading", "Previous Reading Date"]], on=["Equipment ID", "TML ID"], how="left")
 
     # Merge the oldest reading with the combined_df
-    combined_df = combined_df.merge(initial_reading[["Equipment ID", "TML ID", "Initial Reading", "Initial Reading Date"]], on=["Equipment ID", "TML ID"], how="left")
+    combined_df = combined_df.merge(initial_reading[["Equipment ID","TML Group ID", "TML ID", "Initial Reading", "Initial Reading Date"]], on=["Equipment ID", "TML ID"], how="left")
 
 
     combined_df = combined_df.rename(columns={
@@ -101,7 +102,7 @@ def combineData(fileName, sheetname, input_unit, output_unit, fixed, inspections
 
 
     # Rearrange columns
-    combined_df = combined_df[['Equipment ID', 'TML ID', 'Nominal Thickness', 'Minimum Thickness', 'Initial Reading', 'Initial Reading Date', 'Previous Reading', 'Previous Reading Date', 'Latest Reading', 'Latest Reading Date']]
+    combined_df = combined_df[['Equipment ID',"TML Group ID", 'TML ID', 'Nominal Thickness', 'Minimum Thickness', 'Initial Reading', 'Initial Reading Date', 'Previous Reading', 'Previous Reading Date', 'Latest Reading', 'Latest Reading Date']]
 
     # Convert units if necessary
     if output_unit == 'mm':
