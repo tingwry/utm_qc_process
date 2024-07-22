@@ -165,7 +165,7 @@ def run_app():
             return
 
         if toggle_button is None:
-            toggle_button = ctk.CTkButton(root, text="Show Filtered Results", command=toggle_display)
+            toggle_button = ctk.CTkButton(root, text="Show Filtered Results", command=toggle_display, fg_color="#FFFFFF", hover_color="#cccccc", text_color="#0072bc")
             toggle_button.pack(pady=10)  # Adjust pack position
 
         save_as_button.pack(pady=10)  # Show the Save As button after QC processing
@@ -178,7 +178,7 @@ def run_app():
         for widget in result_frame.winfo_children():
             widget.destroy()
 
-        tree = ttk.Treeview(result_frame)
+        tree = ttk.Treeview(result_frame, height=10, show="headings")
         tree.pack(expand=True, fill='both')
 
         # Define columns
@@ -192,6 +192,26 @@ def run_app():
         # Add data to the treeview
         for index, row in dataframe.iterrows():
             tree.insert("", "end", values=list(row))
+
+        # Treeview Customisation (theme colors are selected)
+        bg_color = root._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
+        text_color = root._apply_appearance_mode(ctk.ThemeManager.theme["CTkLabel"]["text_color"])
+        selected_color = root._apply_appearance_mode(ctk.ThemeManager.theme["CTkButton"]["fg_color"])
+
+        treestyle = ttk.Style()
+        treestyle.theme_use('default')
+        treestyle.configure("Treeview",
+                            background=bg_color,
+                            foreground=text_color,
+                            fieldbackground=bg_color,
+                            borderwidth=0,
+                            font=('Helvetica', 12))
+        treestyle.configure("Treeview.Heading",
+                        font=('Helvetica', 14, 'bold'))  # Set the font and size for the headings
+        treestyle.map('Treeview',
+                    background=[('selected', bg_color)],
+                    foreground=[('selected', selected_color)])
+        root.bind("<<TreeviewSelect>>", lambda event: root.focus_set())
 
     def toggle_display():
         nonlocal display_qc_result, displayed_dataframe
