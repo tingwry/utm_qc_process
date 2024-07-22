@@ -12,7 +12,7 @@ from functools import lru_cache
 _cached_df = None
 
 # Function to process Excel file
-def process_excel(db_file_path, sheetname):
+def process_excel(db_file_path, sheetname, db_input_unit, output_unit):
     global _cached_df
 
     if _cached_df is not None:
@@ -48,11 +48,12 @@ def process_excel(db_file_path, sheetname):
     df["Nominal Thickness"] = pd.to_numeric(df["Nominal Thickness"], errors='coerce')
     df["Minimum Thickness"] = pd.to_numeric(df["Minimum Thickness"], errors='coerce')
     df["Readings"] = pd.to_numeric(df["Readings"], errors='coerce')
+        
 
     # Specify the expected date format
-    date_format = "%m/%d/%Y %I:%M:%S %p"
+    # date_format = "%m/%d/%Y %I:%M:%S %p"
     # Convert 'Measurement Taken Date' to datetime
-    df["Measurement Taken Date"] = pd.to_datetime(df["Measurement Taken Date"], format=date_format, errors='coerce')
+    df["Measurement Taken Date"] = pd.to_datetime(df["Measurement Taken Date"], errors='coerce')
     df = df.sort_values(by="Measurement Taken Date", ascending=False)
 
     # Drop rows with NaN values in "Nominal Thickness" or "Minimum Thickness"
@@ -77,7 +78,7 @@ def fixedInfoTable(processed_df):
             "Nominal Thickness",
             "Minimum Thickness"
         ]
-    ][1:]
+    ]
 
     return df
 
@@ -92,6 +93,6 @@ def InspectionsTable(processed_df):
             "Readings",
             "Measurement Taken Date"
         ]
-    ][1:]
+    ]
 
     return df

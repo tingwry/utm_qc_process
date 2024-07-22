@@ -1,3 +1,4 @@
+import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 from db.db_processing import InspectionsTable, fixedInfoTable, process_excel
@@ -19,7 +20,7 @@ def run_app():
         try:
             file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
             if file_path:
-                label.config(text=file_path)
+                label.configure(text=file_path)
                 return file_path
         except Exception as e:
             messagebox.showerror("Error", f"Failed to upload file: {str(e)}")
@@ -35,37 +36,45 @@ def run_app():
         apm_file_path = upload_file(file_label)
         return apm_file_path
 
+
     def add_criteria(criteria=None):
-        criteria_frame = ttk.Frame(criteria_container)
+
+        def update_value_type(selected_criteria):
+            if selected_criteria in ['Remaining Life', 'Corrosion rate (ST)', 'Corrosion rate (LT)']:
+                value_type_dropdown.set('number')
+                value_type_dropdown.configure(state='disabled')
+            else:
+                value_type_dropdown.configure(state='normal')
+
+        def on_criteria_selected(value):
+            update_value_type(value)
+
+        criteria_frame = ctk.CTkFrame(criteria_container)
         criteria_frame.pack(fill='x', pady=5)
         
-        criteria_dropdown = ttk.Combobox(criteria_frame, values=criteria_options, width=35)
+        criteria_dropdown = ctk.CTkComboBox(criteria_frame, values=criteria_options, width=300, command=on_criteria_selected)
         criteria_dropdown.set(criteria.get('criteria') if criteria else criteria_options[0])
         criteria_dropdown.pack(side='left', padx=5)
         
-        operator_dropdown = ttk.Combobox(criteria_frame, values=operator_options)
+        operator_dropdown = ctk.CTkComboBox(criteria_frame, values=operator_options, width=200)
         operator_dropdown.set(criteria.get('operator') if criteria else operator_options[0])
         operator_dropdown.pack(side='left', padx=5)
         
-        value_input = ttk.Entry(criteria_frame)
+        value_input = ctk.CTkEntry(criteria_frame)
         value_input.insert(0, criteria.get('value') if criteria else "")
         value_input.pack(side='left', padx=5)
         
-        value_type_dropdown = ttk.Combobox(criteria_frame, values=value_type_options)
+        value_type_dropdown = ctk.CTkComboBox(criteria_frame, values=value_type_options, width=100)
         value_type_dropdown.set(criteria.get('value_type') if criteria else value_type_options[0])
         value_type_dropdown.pack(side='left', padx=5)
         
         criteria_widgets_list.append((criteria_dropdown, operator_dropdown, value_input, value_type_dropdown))
 
-        def update_value_type(event):
-                selected_criteria = criteria_dropdown.get()
-                if selected_criteria in ['Remaining Life', 'Corrosion rate (ST)', 'Corrosion rate (LT)']:
-                    value_type_dropdown.set('number')
-                    value_type_dropdown.config(state='disabled')
-                else:
-                    value_type_dropdown.config(state='normal')
+        # Call update_value_type with the initial value of criteria_dropdown
+        initial_criteria = criteria_dropdown.get()
+        update_value_type(initial_criteria)
 
-        criteria_dropdown.bind("<<ComboboxSelected>>", update_value_type)
+
 
     def set_default_criteria():
         criteria_list.clear()
@@ -96,6 +105,9 @@ def run_app():
         else:
             add_criteria()
 
+
+
+
     def process_criteria():
         nonlocal qc_result, filtered_result, toggle_button, displayed_dataframe
 
@@ -107,8 +119,9 @@ def run_app():
             messagebox.showerror("Error", "APM Upload Sheet file not selected.")
             return
 
-        sheet_name = sheetname_entry.get().strip()
-        if not sheet_name:
+        db_sheet_name = db_sheetname_entry.get().strip()
+        apm_sheet_name = apm_sheetname_entry.get().strip()
+        if not db_sheet_name or not apm_sheet_name:
             messagebox.showerror("Error", "Sheet name cannot be blank.")
             return
 
@@ -129,19 +142,20 @@ def run_app():
                 messagebox.showerror("Error", f"Invalid criteria input: {str(e)}")
                 return
 
+        db_input_unit = db_unit_combobox.get()
+        apm_input_unit = apm_unit_combobox.get()
+        output_unit = output_unit_combobox.get()
+
         try:
-            df = process_excel(db_file_path, "Table1")
+            df = process_excel(db_file_path, db_sheet_name, db_input_unit, output_unit)
             fixed = fixedInfoTable(df)
             inspections = InspectionsTable(df)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to process database file: {str(e)}")
             return
-        
-        input_unit = unit_combobox.get()
-        output_unit = output_unit_combobox.get()
-        
+
         try:
-            complete_table = combineData(apm_file_path, sheet_name, input_unit, output_unit, fixed, inspections)
+            complete_table = combineData(apm_file_path, apm_sheet_name, db_input_unit, apm_input_unit, output_unit, fixed, inspections)
             qc_result = QC_data(criteria_list, complete_table)
             filtered_result = filter_data_error(qc_result)
             displayed_dataframe = qc_result  # Set the displayed dataframe to qc_result by default
@@ -151,8 +165,8 @@ def run_app():
             return
 
         if toggle_button is None:
-            toggle_button = tk.Button(root, text="Show Filtered Results", command=toggle_display)
-            toggle_button.pack(pady=10)
+            toggle_button = ctk.CTkButton(root, text="Show Filtered Results", command=toggle_display)
+            toggle_button.pack(pady=10)  # Adjust pack position
 
         save_as_button.pack(pady=10)  # Show the Save As button after QC processing
 
@@ -185,11 +199,11 @@ def run_app():
         if display_qc_result:
             displayed_dataframe = qc_result
             display_result(qc_result)
-            toggle_button.config(text="Show Filtered Results")
+            toggle_button.configure(text="Show Filtered Results")
         else:
             displayed_dataframe = filtered_result
             display_result(filtered_result)
-            toggle_button.config(text="Show QC Results")
+            toggle_button.configure(text="Show QC Results")
 
     def save_as():
         if displayed_dataframe is not None:
@@ -200,53 +214,77 @@ def run_app():
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save file: {str(e)}")
 
-    root = tk.Tk()
+    ctk.set_appearance_mode("dark")  # Other options: "light", "system"
+    ctk.set_default_color_theme("blue")  # Other options: "dark-blue", "green"
+
+    root = ctk.CTk()
     root.title("UTM QC Process Application")
 
+    # Main frame for two columns, centered horizontally
+    main_frame = ctk.CTkFrame(root)
+    main_frame.pack(pady=10, padx=10)
+
     # Database file upload section
-    db_file_label = tk.Label(root, text="No database file selected")
+    db_frame = ctk.CTkFrame(main_frame)
+    db_frame.pack(side='left', padx=10, pady=10)
+
+    db_file_label = ctk.CTkLabel(db_frame, text="No database file selected")
     db_file_label.pack()
-    upload_db_button = tk.Button(root, text="Upload Database File", command=upload_db_file)
+    upload_db_button = ctk.CTkButton(db_frame, text="Upload Database File", command=upload_db_file)
     upload_db_button.pack(pady=5)
 
+    db_sheetname_label = ctk.CTkLabel(db_frame, text="DB Sheet Name:")
+    db_sheetname_label.pack()
+    db_sheetname_entry = ctk.CTkEntry(db_frame)
+    db_sheetname_entry.pack(pady=5)
+
+    db_unit_label = ctk.CTkLabel(db_frame, text="Input Unit (in or mm):")
+    db_unit_label.pack()
+    db_unit_combobox = ctk.CTkComboBox(db_frame, values=["in", "mm"])
+    db_unit_combobox.set("in")
+    db_unit_combobox.pack(pady=5)
+
     # APM upload sheet file upload section
-    file_label = tk.Label(root, text="No file selected")
+    apm_frame = ctk.CTkFrame(main_frame)
+    apm_frame.pack(side='left', padx=10, pady=10)
+
+    file_label = ctk.CTkLabel(apm_frame, text="No file selected")
     file_label.pack()
-    upload_button = tk.Button(root, text="Upload APM Upload Sheet", command=upload_apm_file)
+    upload_button = ctk.CTkButton(apm_frame, text="Upload APM Upload Sheet", command=upload_apm_file)
     upload_button.pack(pady=5)
 
-    sheetname_label = tk.Label(root, text="Sheet Name:")
-    sheetname_label.pack()
-    sheetname_entry = tk.Entry(root)
-    sheetname_entry.pack(pady=5)
+    apm_sheetname_label = ctk.CTkLabel(apm_frame, text="APM Uploader Sheet Name:")
+    apm_sheetname_label.pack()
+    apm_sheetname_entry = ctk.CTkEntry(apm_frame)
+    apm_sheetname_entry.pack(pady=5)
 
-    unit_label = tk.Label(root, text="Input Unit (in or mm):")
-    unit_label.pack()
-    unit_combobox = ttk.Combobox(root, values=["in", "mm"])
-    unit_combobox.set("in")
-    unit_combobox.pack(pady=5)
+    apm_unit_label = ctk.CTkLabel(apm_frame, text="Input Unit (in or mm):")
+    apm_unit_label.pack()
+    apm_unit_combobox = ctk.CTkComboBox(apm_frame, values=["in", "mm"])
+    apm_unit_combobox.set("in")
+    apm_unit_combobox.pack(pady=5)
 
-    criteria_container = tk.Frame(root)
+    # Criteria section
+    criteria_container = ctk.CTkFrame(root)
     criteria_container.pack(pady=5)
 
-    add_criteria_button = tk.Button(root, text="Add Criteria", command=add_criteria)
+    add_criteria_button = ctk.CTkButton(root, text="Add Criteria", command=add_criteria)
     add_criteria_button.pack(pady=5)
 
-    set_default_button = tk.Button(root, text="Set Default Criteria", command=set_default_criteria)
+    set_default_button = ctk.CTkButton(root, text="Set Default Criteria", command=set_default_criteria)
     set_default_button.pack(pady=5)
 
-    output_unit_label = tk.Label(root, text="Output Unit (in or mm):")
+    output_unit_label = ctk.CTkLabel(root, text="Output Unit (in or mm):")
     output_unit_label.pack()
-    output_unit_combobox = ttk.Combobox(root, values=["in", "mm"])
+    output_unit_combobox = ctk.CTkComboBox(root, values=["in", "mm"])
     output_unit_combobox.set("in")
     output_unit_combobox.pack(pady=5)
 
-    finalize_button = tk.Button(root, text="Finalize Criteria and Run QC", command=process_criteria)
+    finalize_button = ctk.CTkButton(root, text="Finalize Criteria and Run QC", command=process_criteria)
     finalize_button.pack(pady=10)
 
-    save_as_button = tk.Button(root, text="Save As Excel", command=save_as)
+    save_as_button = ctk.CTkButton(root, text="Save As Excel", command=save_as)
     # Initially do not pack the save_as_button
-    # save_as_button.pack(pady=10)  # Will pack it later in process_criteria
 
     criteria_options = [    
         'nominal thickness difference (Tn - Ta)',     
@@ -269,7 +307,7 @@ def run_app():
     criteria_list = []
     criteria_widgets_list = []
 
-    result_frame = ttk.Frame(root)
+    result_frame = ctk.CTkFrame(root)
     result_frame.pack(expand=True, fill='both', padx=10, pady=10)
 
     display_qc_result = True  # Track which result is being displayed
@@ -281,3 +319,4 @@ def run_app():
 
     root.mainloop()
 
+run_app()
