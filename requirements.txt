@@ -4,3 +4,4 @@ tkinter
 numpy
 datetime
 pyinstaller
+customtkinter

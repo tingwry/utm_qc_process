@@ -49,9 +49,11 @@ def run_app():
         def on_criteria_selected(value):
             update_value_type(value)
 
-        def delete_criteria():
+        def delete_criteria(criteria_frame, widgets_tuple):
             criteria_frame.destroy()
-            criteria_widgets_list.remove((criteria_frame, criteria_dropdown, operator_dropdown, value_input, value_type_dropdown))
+            if widgets_tuple in criteria_widgets_list:
+                criteria_widgets_list.remove(widgets_tuple)
+
 
         criteria_frame = ctk.CTkFrame(criteria_container)
         criteria_frame.pack(fill='x', pady=5)
@@ -72,20 +74,21 @@ def run_app():
         value_type_dropdown.set(criteria.get('value_type') if criteria else value_type_options[0])
         value_type_dropdown.pack(side='left', padx=5)
 
+        # Tuple of widgets to be added to criteria_widgets_list
+        widgets_tuple = (criteria_dropdown, operator_dropdown, value_input, value_type_dropdown)
+
         delete_button = ctk.CTkButton(
             criteria_frame,
-            text="X",
-            command=delete_criteria,
-            fg_color="#D2042D",  # Button color
-            hover_color="#811331",  # Hover color
-            text_color="#ffffff",  # Text color
-            width=30,  # Make the button more square
-            height=30,
-            corner_radius=15  # Make the button circular
+            text="Delete",
+            command=lambda: delete_criteria(criteria_frame, widgets_tuple),
+            fg_color="#2B2B2B", 
+            hover_color="#2B2B2B", 
+            text_color="#1F6AA5",  
         )
         delete_button.pack(side='left', padx=5)
+
         
-        criteria_widgets_list.append((criteria_dropdown, operator_dropdown, value_input, value_type_dropdown))
+        criteria_widgets_list.append(widgets_tuple)
 
         # Call update_value_type with the initial value of criteria_dropdown
         initial_criteria = criteria_dropdown.get()
@@ -121,8 +124,6 @@ def run_app():
                 messagebox.showerror("Error", f"Failed to load default criteria: {str(e)}")
         else:
             add_criteria()
-
-
 
 
     def process_criteria():
@@ -195,7 +196,7 @@ def run_app():
         for widget in result_frame.winfo_children():
             widget.destroy()
 
-        tree = ttk.Treeview(result_frame, height=10, show="headings")
+        tree = ttk.Treeview(result_frame, height=8, show="headings")
         tree.pack(expand=True, fill='both')
 
         # Define columns
@@ -222,9 +223,9 @@ def run_app():
                             foreground=text_color,
                             fieldbackground=bg_color,
                             borderwidth=0,
-                            font=('Helvetica', 12))
+                            font=('Helvetica', 14))
         treestyle.configure("Treeview.Heading",
-                        font=('Helvetica', 14, 'bold'))  # Set the font and size for the headings
+                        font=('Helvetica', 16, 'bold'))  # Set the font and size for the headings
         treestyle.map('Treeview',
                     background=[('selected', bg_color)],
                     foreground=[('selected', selected_color)])
@@ -304,7 +305,7 @@ def run_app():
     # Criteria section
     # criteria_container = ctk.CTkFrame(root)
     # criteria_container.pack(pady=5)
-    criteria_container = ctk.CTkScrollableFrame(root, width=830, height=100)
+    criteria_container = ctk.CTkScrollableFrame(root, width=850, height=100)
     criteria_container._scrollbar.configure(height=0)
     criteria_container.pack(pady=5)
 
