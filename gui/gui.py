@@ -11,6 +11,7 @@ import os
 
 def run_app():
     toggle_button = None
+    noti_button = None
     displayed_dataframe = None  # To keep track of the currently displayed dataframe
     db_file_path = None
     apm_file_path = None
@@ -127,7 +128,7 @@ def run_app():
 
 
     def process_criteria():
-        nonlocal qc_result, filtered_result, toggle_button, displayed_dataframe
+        nonlocal qc_result, filtered_result, toggle_button, noti_button, displayed_dataframe
 
         if not db_file_path:
             messagebox.showerror("Error", "APM Export file not selected.")
@@ -187,6 +188,9 @@ def run_app():
             toggle_button.pack(pady=10)  # Adjust pack position
 
         save_as_button.pack(pady=10)  # Show the Save As button after QC processing
+
+        if noti_button is None:
+            noti_button = ctk.CTkButton(root, text="Send via Ms Teams", command=notification(displayed_dataframe), fg_color="#FFFFFF", hover_color="#cccccc", text_color="#0072bc")
 
     def display_result(dataframe):
         nonlocal displayed_dataframe
@@ -251,6 +255,11 @@ def run_app():
                     displayed_dataframe.to_excel(save_path, index=False)
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save file: {str(e)}")
+
+    # notification / send via ms teams
+    def notification(dataframe):
+        return
+
 
     ctk.set_appearance_mode("dark")  # Other options: "light", "system"
     ctk.set_default_color_theme("blue")  # Other options: "dark-blue", "green"
