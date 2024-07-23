@@ -49,6 +49,10 @@ def run_app():
         def on_criteria_selected(value):
             update_value_type(value)
 
+        def delete_criteria():
+            criteria_frame.destroy()
+            criteria_widgets_list.remove((criteria_frame, criteria_dropdown, operator_dropdown, value_input, value_type_dropdown))
+
         criteria_frame = ctk.CTkFrame(criteria_container)
         criteria_frame.pack(fill='x', pady=5)
         
@@ -67,6 +71,19 @@ def run_app():
         value_type_dropdown = ctk.CTkComboBox(criteria_frame, values=value_type_options, width=100)
         value_type_dropdown.set(criteria.get('value_type') if criteria else value_type_options[0])
         value_type_dropdown.pack(side='left', padx=5)
+
+        delete_button = ctk.CTkButton(
+            criteria_frame,
+            text="X",
+            command=delete_criteria,
+            fg_color="#D2042D",  # Button color
+            hover_color="#811331",  # Hover color
+            text_color="#ffffff",  # Text color
+            width=30,  # Make the button more square
+            height=30,
+            corner_radius=15  # Make the button circular
+        )
+        delete_button.pack(side='left', padx=5)
         
         criteria_widgets_list.append((criteria_dropdown, operator_dropdown, value_input, value_type_dropdown))
 
@@ -112,7 +129,7 @@ def run_app():
         nonlocal qc_result, filtered_result, toggle_button, displayed_dataframe
 
         if not db_file_path:
-            messagebox.showerror("Error", "Database file not selected.")
+            messagebox.showerror("Error", "APM Export file not selected.")
             return
         
         if not apm_file_path:
@@ -151,7 +168,7 @@ def run_app():
             fixed = fixedInfoTable(df)
             inspections = InspectionsTable(df)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process database file: {str(e)}")
+            messagebox.showerror("Error", f"Failed to process APM Export file: {str(e)}")
             return
 
         try:
@@ -244,16 +261,16 @@ def run_app():
     main_frame = ctk.CTkFrame(root)
     main_frame.pack(pady=10, padx=10)
 
-    # Database file upload section
+    # APM Export file upload section
     db_frame = ctk.CTkFrame(main_frame)
     db_frame.pack(side='left', padx=10, pady=10)
 
-    db_file_label = ctk.CTkLabel(db_frame, text="No database file selected")
+    db_file_label = ctk.CTkLabel(db_frame, text="No file selected")
     db_file_label.pack()
-    upload_db_button = ctk.CTkButton(db_frame, text="Upload Database File", command=upload_db_file)
+    upload_db_button = ctk.CTkButton(db_frame, text="Upload APM Export File", command=upload_db_file)
     upload_db_button.pack(pady=5)
 
-    db_sheetname_label = ctk.CTkLabel(db_frame, text="DB Sheet Name:")
+    db_sheetname_label = ctk.CTkLabel(db_frame, text="APM Export's Sheet Name:")
     db_sheetname_label.pack()
     db_sheetname_entry = ctk.CTkEntry(db_frame)
     db_sheetname_entry.pack(pady=5)
@@ -273,7 +290,7 @@ def run_app():
     upload_button = ctk.CTkButton(apm_frame, text="Upload APM Upload Sheet", command=upload_apm_file)
     upload_button.pack(pady=5)
 
-    apm_sheetname_label = ctk.CTkLabel(apm_frame, text="APM Uploader Sheet Name:")
+    apm_sheetname_label = ctk.CTkLabel(apm_frame, text="APM Uploader's Sheet Name:")
     apm_sheetname_label.pack()
     apm_sheetname_entry = ctk.CTkEntry(apm_frame)
     apm_sheetname_entry.pack(pady=5)
@@ -285,8 +302,12 @@ def run_app():
     apm_unit_combobox.pack(pady=5)
 
     # Criteria section
-    criteria_container = ctk.CTkFrame(root)
+    # criteria_container = ctk.CTkFrame(root)
+    # criteria_container.pack(pady=5)
+    criteria_container = ctk.CTkScrollableFrame(root, width=830, height=100)
+    criteria_container._scrollbar.configure(height=0)
     criteria_container.pack(pady=5)
+
 
     add_criteria_button = ctk.CTkButton(root, text="Add Criteria", command=add_criteria)
     add_criteria_button.pack(pady=5)
