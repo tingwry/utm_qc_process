@@ -1,4 +1,5 @@
 import os
+import hashlib
 import numpy as np
 import pandas as pd
 import openpyxl
@@ -9,14 +10,23 @@ from datetime import datetime
 from functools import lru_cache
 
 # Global variable to store the processed DataFrame
-_cached_df = None
+# _cached_df = None
+
+# Function to calculate file hash
+def calculate_file_hash(file_path):
+    hash_algo = hashlib.sha256()
+    with open(file_path, 'rb') as file:
+        while chunk := file.read(8192):
+            hash_algo.update(chunk)
+    return hash_algo.hexdigest()
 
 # Function to process Excel file
-def process_excel(db_file_path, sheetname, db_input_unit, output_unit):
-    global _cached_df
+@lru_cache(maxsize=5)
+def process_excel(file_hash, db_file_path, sheetname, db_input_unit, output_unit):
+    # global _cached_df
 
-    if _cached_df is not None:
-        return _cached_df
+    # if _cached_df is not None:
+    #     return _cached_df
 
     wb = openpyxl.load_workbook(db_file_path, data_only=True)
     ws = wb[sheetname]
@@ -64,8 +74,13 @@ def process_excel(db_file_path, sheetname, db_input_unit, output_unit):
 
     df = df.reset_index(drop=True)
 
-    _cached_df = df
+    # _cached_df = df
     return df
+
+# Wrapper function to handle hashing and caching
+def get_processed_excel(db_file_path, sheetname, db_input_unit, output_unit):
+    file_hash = calculate_file_hash(db_file_path)
+    return process_excel(file_hash, db_file_path, sheetname, db_input_unit, output_unit)
 
 def fixedInfoTable(processed_df):
     df = processed_df.copy()

@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import filedialog, ttk, messagebox
-from db.db_processing import InspectionsTable, fixedInfoTable, process_excel
+from tkinter import filedialog, ttk, messagebox, font
+from db.db_processing import InspectionsTable, fixedInfoTable, get_processed_excel, process_excel
 from functions.data_processing import pullInsPoints, combineData
 from functions.filter_data_error import filter_data_error
 from functions.qc_processing import QC_data
@@ -166,7 +166,8 @@ def run_app():
         output_unit = output_unit_combobox.get()
 
         try:
-            df = process_excel(db_file_path, db_sheet_name, db_input_unit, output_unit)
+            # df = process_excel(db_file_path, db_sheet_name, db_input_unit, output_unit)
+            df = get_processed_excel(db_file_path, db_sheet_name, db_input_unit, output_unit)
             fixed = fixedInfoTable(df)
             inspections = InspectionsTable(df)
         except Exception as e:
@@ -200,7 +201,7 @@ def run_app():
         for widget in result_frame.winfo_children():
             widget.destroy()
 
-        tree = ttk.Treeview(result_frame, height=8, show="headings")
+        tree = ttk.Treeview(result_frame, height=6, show="headings")
         tree.pack(expand=True, fill='both')
 
         # Define columns
@@ -227,9 +228,10 @@ def run_app():
                             foreground=text_color,
                             fieldbackground=bg_color,
                             borderwidth=0,
-                            font=('Helvetica', 14))
+                            font=(font.nametofont('TkTextFont').actual(), 18),
+                            rowheight=40)
         treestyle.configure("Treeview.Heading",
-                        font=('Helvetica', 16, 'bold'))  # Set the font and size for the headings
+                        font=(font.nametofont('TkTextFont').actual(), 18))  # Set the font and size for the headings
         treestyle.map('Treeview',
                     background=[('selected', bg_color)],
                     foreground=[('selected', selected_color)])
