@@ -11,7 +11,7 @@ import os
 
 def run_app():
     toggle_button = None
-    noti_button = None
+    # noti_button = None
     displayed_dataframe = None  # To keep track of the currently displayed dataframe
     db_file_path = None
     apm_file_path = None
@@ -190,8 +190,20 @@ def run_app():
 
         save_as_button.pack(pady=10)  # Show the Save As button after QC processing
 
-        if noti_button is None:
-            noti_button = ctk.CTkButton(root, text="Send via Ms Teams", command=notification(displayed_dataframe), fg_color="#FFFFFF", hover_color="#cccccc", text_color="#0072bc")
+        # if noti_button is None:
+        #     email_label = ctk.CTkLabel(root, text="Enter Emails (comma separated):")
+        #     email_label.pack(pady=5)
+        #     email_entry = ctk.CTkEntry(root, width=300)
+        #     email_entry.pack(pady=5)
+
+        #     noti_button = ctk.CTkButton(root, text="Send via Ms Teams", command=lambda: notification(displayed_dataframe, email_entry.get()), fg_color="#FFFFFF", hover_color="#cccccc", text_color="#0072bc")
+        #     noti_button.pack(pady=10)
+
+
+        email_label.pack(pady=5)
+        email_entry.pack(pady=5)
+        noti_button.pack(pady=10)
+            
 
     def display_result(dataframe):
         nonlocal displayed_dataframe
@@ -201,7 +213,7 @@ def run_app():
         for widget in result_frame.winfo_children():
             widget.destroy()
 
-        tree = ttk.Treeview(result_frame, height=6, show="headings")
+        tree = ttk.Treeview(result_frame, height=4, show="headings")
         tree.pack(expand=True, fill='both')
 
         # Define columns
@@ -259,8 +271,14 @@ def run_app():
                 messagebox.showerror("Error", f"Failed to save file: {str(e)}")
 
     # notification / send via ms teams
-    def notification(dataframe):
-        return
+    def notification(dataframe, emails):
+        try:
+            email_list = [email.strip() for email in emails.split(",") if email.strip()]
+            
+            messagebox.showinfo("Success", "Notification sent successfully.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send notification: {str(e)}")
+
 
 
     ctk.set_appearance_mode("dark")  # Other options: "light", "system"
@@ -314,18 +332,20 @@ def run_app():
     apm_unit_combobox.pack(pady=5)
 
     # Criteria section
-    # criteria_container = ctk.CTkFrame(root)
-    # criteria_container.pack(pady=5)
     criteria_container = ctk.CTkScrollableFrame(root, width=850, height=100)
     criteria_container._scrollbar.configure(height=0)
     criteria_container.pack(pady=5)
 
+    # button frame
+    button_frame = ctk.CTkFrame(root)
+    button_frame.pack(pady=5)
 
-    add_criteria_button = ctk.CTkButton(root, text="Add Criteria", command=add_criteria)
-    add_criteria_button.pack(pady=5)
+    add_criteria_button = ctk.CTkButton(button_frame, text="Add Criteria", command=add_criteria)
+    add_criteria_button.pack(side='left', padx=5)
 
-    set_default_button = ctk.CTkButton(root, text="Set Default Criteria", command=set_default_criteria)
-    set_default_button.pack(pady=5)
+    set_default_button = ctk.CTkButton(button_frame, text="Set Default Criteria", command=set_default_criteria)
+    set_default_button.pack(side='left', padx=5)
+
 
     output_unit_label = ctk.CTkLabel(root, text="Output Unit (in or mm):")
     output_unit_label.pack()
@@ -338,6 +358,10 @@ def run_app():
 
     save_as_button = ctk.CTkButton(root, text="Save As Excel", command=save_as)
     # Initially do not pack the save_as_button
+
+    email_label = ctk.CTkLabel(root, text="Enter Emails (comma separated):")
+    email_entry = ctk.CTkEntry(root, width=300)
+    noti_button = ctk.CTkButton(root, text="Send via Ms Teams", command=lambda: notification(displayed_dataframe, email_entry.get()), fg_color="#FFFFFF", hover_color="#cccccc", text_color="#0072bc")
 
     criteria_options = [    
         'nominal thickness difference (Tn - Ta)',     
