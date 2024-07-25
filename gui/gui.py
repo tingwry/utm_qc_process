@@ -190,16 +190,6 @@ def run_app():
 
         save_as_button.pack(pady=10)  # Show the Save As button after QC processing
 
-        # if noti_button is None:
-        #     email_label = ctk.CTkLabel(root, text="Enter Emails (comma separated):")
-        #     email_label.pack(pady=5)
-        #     email_entry = ctk.CTkEntry(root, width=300)
-        #     email_entry.pack(pady=5)
-
-        #     noti_button = ctk.CTkButton(root, text="Send via Ms Teams", command=lambda: notification(displayed_dataframe, email_entry.get()), fg_color="#FFFFFF", hover_color="#cccccc", text_color="#0072bc")
-        #     noti_button.pack(pady=10)
-
-
         email_label.pack(pady=5)
         email_entry.pack(pady=5)
         noti_button.pack(pady=10)
